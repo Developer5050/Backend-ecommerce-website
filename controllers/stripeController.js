@@ -13,11 +13,6 @@ const createCheckoutSession = async (req, res) => {
       return res.status(400).json({ error: "Cart items are required." });
     }
 
-    // ✅ Set frontend & backend URLs dynamically
-    const frontendURL =
-      process.env.NODE_ENV === "production"
-        ? process.env.CLIENT_URL
-        : process.env.FRONTEND_URL_LOCAL;
 
     // Remove callback path if using CALLBACK_URL
     const backendURL =
@@ -28,8 +23,8 @@ const createCheckoutSession = async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
-      success_url: `${frontendURL}/order-confirmed`,
-      cancel_url: `${frontendURL}/billing`,
+      success_url: `${process.env.CLIENT_URL}/order-confirmed`,
+      cancel_url: `${process.env.CLIENT_URL}/billing`,
       line_items: items.map((item) => ({
         price_data: {
           currency: "usd",
