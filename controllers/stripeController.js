@@ -14,10 +14,9 @@ const createCheckoutSession = async (req, res) => {
     }
 
 
-    // Remove callback path if using CALLBACK_URL
     const backendURL =
       process.env.NODE_ENV === "production"
-        ? process.env.CALLBACK_URL // define this in .env
+        ? process.env.BACKEND_URL // define this in .env
         : process.env.BACKEND_URL_LOCAL;
 
     const session = await stripe.checkout.sessions.create({
