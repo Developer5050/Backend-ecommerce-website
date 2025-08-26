@@ -5,8 +5,6 @@ const Order = require("../models/orderModel");
 const createCheckoutSession = async (req, res) => {
   try {
     const customerId = req.user?.userId;
-    // ✅ correctly get it
-
     console.log("🔐 Customer ID:", customerId);
 
     const { items, customerInfo, pricing, shipping } = req.body;
@@ -15,19 +13,31 @@ const createCheckoutSession = async (req, res) => {
       return res.status(400).json({ error: "Cart items are required." });
     }
 
+    // ✅ Set frontend & backend URLs dynamically
+    const frontendURL =
+      process.env.NODE_ENV === "production"
+        ? process.env.CLIENT_URL
+        : process.env.FRONTEND_URL_LOCAL;
+
+    // Remove callback path if using CALLBACK_URL
+    const backendURL =
+      process.env.NODE_ENV === "production"
+        ? process.env.CALLBACK_URL // define this in .env
+        : process.env.BACKEND_URL_LOCAL;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
-      success_url: `http://localhost:5173/order-confirmed`,
-      cancel_url: `http://localhost:5173/billing`,
+      success_url: `${frontendURL}/order-confirmed?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendURL}/billing`,
       line_items: items.map((item) => ({
         price_data: {
           currency: "usd",
           product_data: {
             name: item.title || item.name || "Untitled Product",
-            images: [`http://localhost:8080/uploads/${item.image}`],
+            images: [`${backendURL}/uploads/${item.image}`],
           },
-          unit_amount: item.price * 100,
+          unit_amount: Math.round(item.price * 100),
         },
         quantity: item.quantity,
       })),
@@ -40,7 +50,7 @@ const createCheckoutSession = async (req, res) => {
     });
 
     const newOrder = new Order({
-      customerId, // ✅ now it's correct
+      customerId,
       customerInfo,
       items,
       pricing: {
